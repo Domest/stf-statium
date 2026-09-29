@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Tables</title>
+  <style>
+    body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }
+    ul { list-style: none; padding: 0; }
+    li { margin: 8px 0; }
+    li button {
+      padding: 10px 20px; font-size: 16px; cursor: pointer;
+      background: #4285f4; color: white; border: none; border-radius: 4px;
+      width: 100%; text-align: left;
+    }
+    li button:hover { background: #3367d6; }
+
+    #modal {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      justify-content: center; align-items: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: white; padding: 30px; border-radius: 8px;
+      min-width: 320px; max-width: 480px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .modal-content h2 { margin-top: 0; }
+    .modal-content input {
+      width: 100%; padding: 10px; font-size: 15px;
+      box-sizing: border-box; margin: 10px 0;
+      border: 1px solid #ccc; border-radius: 4px;
+    }
+    .modal-buttons { display: flex; gap: 10px; margin-top: 10px; }
+    .modal-buttons button { flex: 1; padding: 10px; font-size: 15px;
+      border: none; border-radius: 4px; cursor: pointer; }
+    #login-btn { background: #34a853; color: white; }
+    #cancel-btn { background: #eee; }
+    #modal-error { color: #d93025; margin-top: 10px; min-height: 20px; }
+  </style>
+</head>
+<body>
+  <h1>Доступные таблицы</h1>
+  <ul id="tables-list">Загрузка...</ul>
+
+  <div id="modal">
+    <div class="modal-content">
+      <h2>Введите секретную фразу</h2>
+      <p>Таблица: <strong id="modal-table-name"></strong></p>
+      <input type="password" id="secret-input" placeholder="Секретная фраза" autocomplete="off">
+      <div id="modal-error"></div>
+      <div class="modal-buttons">
+        <button id="cancel-btn">Отмена</button>
+        <button id="login-btn">Войти</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxS0PfbjYRRwkXmIh9f-Ii__h0kq73jXtDRbntUHlK76wy70W-66Ps7MDEuejk3NmdKZQ/exec';
+    let selectedTable = null;
+
+    async function callApi(payload) {
+      const res = await fetch(WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        redirect: 'follow',
+        body: JSON.stringify(payload)
+      });
+      return res.json();
+    }
+
+    async function loadTables() {
+      const list = document.getElementById('tables-list');
+      try {
+        const result = await callApi({ action: 'listTables' });
+        if (result.status !== 'success') {
+          list.textContent = 'Ошибка: ' + result.message;
+          return;
+        }
+        list.innerHTML = '';
+        if (result.tables.length === 0) {
+          list.textContent = 'Нет доступных таблиц.';
+          return;
+        }
+        result.tables.forEach(t => {
+          const li = document.createElement('li');
+          const btn = document.createElement('button');
+          btn.textContent = t.name;
+          btn.onclick = () => openModal(t.name);
+          li.appendChild(btn);
+          list.appendChild(li);
+        });
+      } catch (e) {
+        list.textContent = 'Ошибка: ' + e.message;
+      }
+    }
+
+    function openModal(tableName) {
+      selectedTable = tableName;
+      document.getElementById('modal-table-name').textContent = tableName;
+      document.getElementById('secret-input').value = '';
+      document.getElementById('modal-error').textContent = '';
+      document.getElementById('modal').style.display = 'flex';
+      document.getElementById('secret-input').focus();
+    }
+
+    function closeModal() {
+      document.getElementById('modal').style.display = 'none';
+      selectedTable = null;
+    }
+
+    async function doLogin() {
+      const phrase = document.getElementById('secret-input').value;
+      const errDiv = document.getElementById('modal-error');
+      errDiv.textContent = 'Проверка...';
+
+      try {
+        // ✅ Передаём и фразу, и имя таблицы
+        const result = await callApi({
+          action: 'login',
+          phrase: phrase,
+          tableName: selectedTable
+        });
+
+        if (result.status !== 'success') {
+          errDiv.textContent = result.message;
+          return;
+        }
+
+        localStorage.setItem('session_token', result.token);
+        localStorage.setItem('session_expires', result.expiresAt);
+        localStorage.setItem('table_name', selectedTable);
+
+        window.location.href = 'table.html';
+      } catch (e) {
+        errDiv.textContent = 'Ошибка соединения: ' + e.message;
+      }
+    }
+
+    document.getElementById('login-btn').onclick = doLogin;
+    document.getElementById('cancel-btn').onclick = closeModal;
+    document.getElementById('secret-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doLogin();
+    });
+
+    loadTables();
+  </script>
+</body>
+</html>

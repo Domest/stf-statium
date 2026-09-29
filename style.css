@@ -1,0 +1,271 @@
+/* ============================================================
+   Палитра
+   ============================================================ */
+:root {
+  --color-1: #8C5938;
+  --color-2: #946937;
+  --color-3: #886E35;
+  --color-4: #706624;
+  --color-5: #707639;
+  --color-6: #146EAF;
+
+  --bg: #040404;          /* фон страницы */
+  --header-bg: #3E2A18;   /* шапка — тёмно-коричневый */
+  --section-bg: #23180A;  /* секции */
+  --sidebar-bg: #170E05;  /* навигация */
+  --text: #FFFFFF;
+
+  --ok: #4CAF50;          /* статус: успех */
+  --ok-text: #101408;
+  --err: #E5533D;         /* статус: ошибка / неверный ввод */
+  --err-text: #FFEDEA;
+
+  --header-h: 52px;
+  --sidebar-w: 230px;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: sans-serif;
+  color: var(--text); background: var(--bg);
+  font-size: 15px;
+}
+
+/* ============================================================
+   Шапка (fixed, во всю ширину)
+   ============================================================ */
+#site-header {
+  position: fixed; top: 0; left: 0; right: 0; height: var(--header-h);
+  display: flex; align-items: center; gap: 12px;
+  background: var(--header-bg); padding: 0 20px; z-index: 300;
+}
+/* Картинка таблицы в шапке: вписывается по высоте, пропорции сохранены */
+#table-icon {
+  flex: 0 0 auto;
+  height: 38px; width: auto; max-width: 140px;
+  object-fit: contain; border-radius: 4px;
+}
+#table-icon[hidden] { display: none; }
+#site-header h1 {
+  margin: 0; font-size: 20px; font-weight: 600; flex: 1; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#toolbar { display: flex; gap: 8px; }
+#toolbar button {
+  padding: 8px 16px; font-size: 14px; cursor: pointer;
+  border: none; border-radius: 4px;
+  background: var(--color-6); color: #fff;
+}
+#toolbar button:hover { background: #3A8FD0; }
+#logout-btn { background: transparent; border: 1px solid var(--err); color: var(--err); }
+#logout-btn:hover { background: rgba(229, 83, 61, .2); }
+
+/* Индикатор статуса обновления (левее кнопки «Обновить») */
+#update-status {
+  font-size: 13px; padding: 6px 12px; border-radius: 16px;
+  white-space: nowrap; display: none;
+}
+#update-status.show { display: inline-block; }
+#update-status.loading { background: var(--color-5); color: #fff; }
+#update-status.success { background: var(--ok); color: var(--ok-text); }
+#update-status.error   { background: var(--err); color: var(--err-text); }
+
+/* ============================================================
+   Вертикальная навигация по листам
+   ============================================================ */
+#sidebar {
+  position: fixed; left: 0; top: var(--header-h); bottom: 0;
+  width: var(--sidebar-w);
+  background: var(--sidebar-bg);
+  border-right: 1px solid rgba(255, 255, 255, .08);
+  overflow-y: auto; z-index: 200;
+}
+#sheets-nav { padding-top: 8px; }
+.nav-loading, .nav-empty {
+  font-size: 14px; color: rgba(255, 255, 255, .55); padding: 8px 16px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 10px 14px;
+  background: none; border: none; border-left: 3px solid transparent;
+  color: rgba(255, 255, 255, .85); font-size: 15px; font-family: inherit;
+  cursor: pointer; text-align: left;
+}
+.nav-item:hover { background: rgba(140, 89, 56, .25); color: #fff; }
+.nav-item.active {
+  background: rgba(140, 89, 56, .4);
+  border-left-color: var(--color-6); color: #fff;
+}
+.nav-icon { flex: 0 0 18px; width: 18px; height: 18px; color: var(--color-2); }
+.nav-item.active .nav-icon { color: #5EB3F2; }
+.nav-label {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ============================================================
+   Контент
+   ============================================================ */
+#main {
+  margin-left: var(--sidebar-w);
+  padding: calc(var(--header-h) + 20px) 28px 70px;
+}
+.page { max-width: 1150px; }
+
+/* Два столбца блоков данных */
+#content {
+  display: grid; grid-template-columns: 1fr 1fr;
+  column-gap: 20px; align-items: start;
+}
+@media (max-width: 860px) { #content { grid-template-columns: 1fr; } }
+
+/* Секции: цвет отличается от фона, скруглённые края, без линии границы */
+.block {
+  min-width: 0;
+  background: var(--section-bg);
+  border: none;
+  border-radius: 12px;
+  padding: 6px 18px 12px;
+  margin-top: 14px;
+}
+.block-wide { grid-column: 1 / -1; }
+
+h2.section-title {
+  margin: 10px 0 8px; font-size: 17px; color: var(--text);
+  border-bottom: 2px solid rgba(140, 89, 56, .6); padding-bottom: 5px;
+}
+h3.entity-name { margin: 10px 0 4px; font-size: 15px; color: rgba(255, 255, 255, .85); }
+
+/* Поле «название -> значение»:
+   подпись умеет сжиматься и переносить текст, поле ввода — забирать место.
+   Это не даёт элементам вылезать за границы секции. */
+.field { display: flex; align-items: center; gap: 12px; padding: 5px 0; position: relative; }
+.field > p.label {
+  flex: 0 1 260px; min-width: 0;
+  margin: 0; font-size: 15px; color: var(--text); line-height: 1.35;
+  overflow-wrap: break-word;
+}
+/* Значение, вычисляемое формулой: только чтение */
+.field > p.computed {
+  flex: 1 1 0; min-width: 0; overflow-wrap: break-word;
+  margin: 0; padding: 6px 10px; font-size: 14px;
+  background: rgba(140, 89, 56, .22); color: rgba(255, 255, 255, .85);
+  border-radius: 4px; cursor: not-allowed; min-height: 30px;
+}
+/* Редактируемое значение: текстовое поле или выпадающий список.
+   Селектор без ".field >" — базовый вид применяется и в секциях,
+   и в таблицах (Раса, Религия, Сословия, персонажи). */
+input.cell-input, select.cell-input {
+  flex: 1 1 0; min-width: 0;
+  padding: 7px 10px; font-size: 15px; font-family: inherit;
+  border: 1px solid var(--color-1); border-radius: 4px;
+  background: var(--bg); color: var(--text); min-height: 30px;
+}
+select.cell-input option { background: var(--bg); color: var(--text); }
+input.cell-input:hover, select.cell-input:hover { border-color: var(--color-2); }
+input.cell-input:focus, select.cell-input:focus {
+  outline: none; border-color: var(--color-6);
+}
+input.cell-input.dirty, select.cell-input.dirty { border-color: #D9A441; }
+input.cell-input.saving, select.cell-input.saving { opacity: .6; }
+/* Цветовая градация по значению 0..100 (текст и фон поля).
+   Правило стоит ДО .invalid, чтобы при ошибке ввода фон становился красным. */
+input.cell-input[data-tint], select.cell-input[data-tint] {
+  color: var(--tint-color, var(--text));
+  background: var(--tint-bg, var(--bg));
+}
+/* Неверный ввод: красная граница */
+input.cell-input.invalid, select.cell-input.invalid {
+  border-color: var(--err); background: rgba(229, 83, 61, .12);
+}
+
+/* Таблица персонажей — единственный табличный блок */
+table.characters { border-collapse: collapse; width: 100%; margin-top: 8px; }
+table.characters th, table.characters td {
+  border: 1px solid rgba(140, 89, 56, .4);
+  padding: 3px; text-align: left; position: relative;
+}
+table.characters th {
+  background: rgba(140, 89, 56, .45); color: var(--text);
+  font-size: 14px; padding: 8px 10px;
+}
+table.characters input.cell-input, table.characters select.cell-input {
+  width: 100%; border: 1px solid transparent; background: transparent;
+  padding: 5px 7px; font-size: 14px;
+}
+table.characters input.cell-input:hover, table.characters select.cell-input:hover {
+  border-color: var(--color-1);
+}
+table.characters td.computed, table.characters th.computed {
+  background: rgba(140, 89, 56, .22); color: rgba(255, 255, 255, .85);
+  padding: 6px 10px; font-size: 14px; cursor: not-allowed;
+}
+
+/* Списки сущностей (Раса, Религия, Сословия):
+   вид таблицы БЕЗ границ ячеек. Секции занимают оба столбца. */
+table.entity-table {
+  border-collapse: collapse; width: 100%; margin-top: 8px;
+}
+table.entity-table th, table.entity-table td {
+  border: none; padding: 3px 6px; text-align: left; position: relative;
+}
+table.entity-table th {
+  font-size: 14px; font-weight: 600; color: rgba(255, 255, 255, .7);
+  padding: 8px 6px;
+}
+table.entity-table input.cell-input, table.entity-table select.cell-input {
+  width: 100%; padding: 6px 8px; font-size: 14px;
+}
+table.entity-table p.computed {
+  margin: 0; padding: 6px 10px; font-size: 14px;
+  background: var(--tint-bg, rgba(140, 89, 56, .22));
+  color: var(--tint-color, rgba(255, 255, 255, .85));
+  border-radius: 4px; cursor: not-allowed;
+}
+/* Поле «только чтение» (Лояльность, Статус в Сословиях).
+   Цвет и фон могут перекрываться градацией по значению. */
+table.entity-table p.readonly-value {
+  margin: 0; padding: 6px 10px; font-size: 14px;
+  background: var(--tint-bg, rgba(140, 89, 56, .22));
+  color: var(--tint-color, rgba(255, 255, 255, .85));
+  border-radius: 4px; cursor: not-allowed;
+}
+
+/* Радиальная диаграмма «Раса»: небольшой пончик + подписи с процентами */
+.race-chart { display: flex; align-items: center; gap: 18px; margin-top: 14px; flex-wrap: wrap; }
+.race-chart svg { display: block; flex: 0 0 auto; }
+.race-chart-legend { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.race-legend-item {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 12px; color: rgba(255, 255, 255, .85);
+}
+.race-legend-chip { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
+
+/* Popup с описанием ошибки ввода */
+.validation-popup {
+  position: absolute; left: 0; right: 0; top: calc(100% + 4px);
+  background: #241404; border: 1px solid var(--err); color: var(--err-text);
+  font-size: 13px; padding: 6px 10px; border-radius: 6px;
+  z-index: 400; white-space: normal; line-height: 1.35;
+  animation: popup-in .12s ease-out;
+}
+@keyframes popup-in {
+  from { opacity: 0; transform: translateY(-3px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Заглушка для листов без отображения */
+.sheet-placeholder {
+  background: var(--section-bg); border-radius: 12px;
+  padding: 40px 30px; margin-top: 14px;
+  font-size: 15px; color: rgba(255, 255, 255, .75); text-align: center;
+}
+
+#status { color: var(--err); margin: 12px 0; font-size: 13px; }
+.legend { margin-top: 10px; font-size: 12px; color: rgba(255, 255, 255, .6); }
+.legend .sq {
+  display: inline-block; width: 12px; height: 12px;
+  border: 1px solid var(--color-1); border-radius: 2px;
+  vertical-align: middle; margin: 0 4px 0 12px;
+}

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Просмотр таблицы</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header id="site-header">
+    <img id="table-icon" alt="" hidden>
+    <h1 id="table-title"></h1>
+    <span id="update-status"></span>
+    <div id="toolbar">
+      <button id="refresh-btn">Обновить</button>
+      <button id="logout-btn">Выйти</button>
+    </div>
+  </header>
+
+  <nav id="sidebar">
+    <div id="sheets-nav">
+      <div class="nav-loading">Загрузка…</div>
+    </div>
+  </nav>
+
+  <main id="main">
+    <div class="page">
+      <div id="status"></div>
+      <div class="legend">
+        Значения сохраняются по Enter или потере фокуса (списки — сразу при выборе).
+        <span class="sq" style="background:rgba(140,89,56,.22);"></span>Вычисляется формулой — редактирование запрещено.
+      </div>
+      <div id="content">Загрузка...</div>
+    </div>
+  </main>
+
+  <!-- Порядок подключения важен: config -> api -> validation -> tints -> charts -> render -> edit -> main -->
+  <script src="config.js"></script>
+  <script src="api.js"></script>
+  <script src="validation.js"></script>
+  <script src="tints.js"></script>
+  <script src="charts.js"></script>
+  <script src="render.js"></script>
+  <script src="edit.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
