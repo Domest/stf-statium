@@ -30,6 +30,15 @@ function donutArcPath(cx, cy, rOut, rIn, a1, a2) {
     ' Z';
 }
 
+// Подсветка доли диаграммы и её подписи в легенде при наведении.
+// Связь сектор <-> строка легенды — по атрибуту data-legend (индекс расы).
+function setRaceSegmentHover(index, on) {
+  document.querySelectorAll('#race-chart path[data-legend="' + index + '"]')
+    .forEach(p => p.classList.toggle('hovered', on));
+  document.querySelectorAll('#race-chart .race-legend-item[data-legend="' + index + '"]')
+    .forEach(it => it.classList.toggle('hovered', on));
+}
+
 // Строит диаграмму внутри контейнера (контейнер очищается)
 function renderRaceChart(container, entity) {
   container.innerHTML = '';
@@ -74,6 +83,11 @@ function renderRaceChart(container, entity) {
       path.setAttribute('fill', it.color);
       path.setAttribute('stroke', '#23180A');
       path.setAttribute('stroke-width', '2');
+      path.classList.add('seg');
+      path.dataset.legend = i;
+      // Наведение: сектор подсвечивается, его строка легенды — жирнее
+      path.addEventListener('pointerenter', () => setRaceSegmentHover(i, true));
+      path.addEventListener('pointerleave', () => setRaceSegmentHover(i, false));
       svg.appendChild(path);
     });
     angle += sweep;
@@ -86,13 +100,15 @@ function renderRaceChart(container, entity) {
   // Подписи: цветной маркер, название расы и её доля в процентах
   const legend = document.createElement('div');
   legend.className = 'race-chart-legend';
-  items.forEach(it => {
+  items.forEach((it, i) => {
     const item = document.createElement('div');
     item.className = 'race-legend-item';
+    item.dataset.legend = i;
     const chip = document.createElement('span');
     chip.className = 'race-legend-chip';
     chip.style.background = it.color;
     const text = document.createElement('span');
+    text.className = 'race-legend-text';
     text.textContent = it.name + ' — ' + fmtPercent(it.percent);
     item.appendChild(chip);
     item.appendChild(text);

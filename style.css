@@ -241,6 +241,12 @@ table.entity-table p.readonly-value {
   font-size: 12px; color: rgba(255, 255, 255, .85);
 }
 .race-legend-chip { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
+.race-legend-text { white-space: nowrap; }
+/* Наведение на долю: сектор ярче, подпись легенды — жирнее.
+   Текст не переносится (nowrap), маркер фиксированной ширины,
+   поэтому утолщение шрифта не сдвигает раскладку. */
+.race-chart path.seg.hovered { filter: brightness(1.35); }
+.race-legend-item.hovered .race-legend-text { font-weight: 700; }
 
 /* Popup с описанием ошибки ввода */
 .validation-popup {
