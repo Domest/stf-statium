@@ -10,10 +10,23 @@
   <header id="site-header">
     <img id="table-icon" alt="" hidden>
     <h1 id="table-title"></h1>
+    <div id="header-divider"></div>
+    <div id="header-stats">
+      <span class="header-stat" id="stat-treasury"></span>
+      <span class="header-stat" id="stat-balance"></span>
+      <span class="header-stat" id="stat-recruits"></span>
+    </div>
     <span id="update-status"></span>
     <div id="toolbar">
-      <button id="refresh-btn">Обновить</button>
-      <button id="logout-btn">Выйти</button>
+      <button id="refresh-btn" class="icon-btn" title="Обновить" aria-label="Обновить">
+        <span class="btn-icon" role="img" aria-label="Обновить" style="--icon: url('img/refresh-button-icon.svg');"></span>
+      </button>
+      <button id="map-btn" class="icon-btn" title="Карта" aria-label="Карта">
+        <span class="btn-icon" role="img" aria-label="Карта" style="--icon: url('img/map-button-icon.svg');"></span>
+      </button>
+      <button id="logout-btn" class="icon-btn" title="Выйти" aria-label="Выйти">
+        <span class="btn-icon" role="img" aria-label="Выйти" style="--icon: url('img/exit-button-icon.svg');"></span>
+      </button>
     </div>
   </header>
 
@@ -30,7 +43,13 @@
         Значения сохраняются по Enter или потере фокуса (списки — сразу при выборе).
         <span class="sq" style="background:rgba(140,89,56,.22);"></span>Вычисляется формулой — редактирование запрещено.
       </div>
-      <div id="content">Загрузка...</div>
+      <div id="content"></div>
+    </div>
+    <!-- Индикатор загрузки: по центру области контента,
+         крутящаяся иконка img/loading-icon.svg + надпись «Загрузка» -->
+    <div id="loading-overlay" aria-hidden="true">
+      <span class="loading-spinner"></span>
+      <span class="loading-label">Загрузка</span>
     </div>
   </main>
 

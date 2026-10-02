@@ -17,33 +17,103 @@ function renderNav() {
   }
 
   sheetsList.forEach(s => {
+    const title = SHEET_TITLES[s.name] || s.name;
     const btn = document.createElement('button');
     btn.className = 'nav-item' + (s.name === currentSheet ? ' active' : '');
-    btn.title = s.name;
-    btn.appendChild(makeNavIcon());
+    btn.title = title;
+    btn.appendChild(makeNavIcon(s.name));
     const label = document.createElement('span');
     label.className = 'nav-label';
-    label.textContent = s.name;
+    label.textContent = title;
     btn.appendChild(label);
     btn.onclick = () => switchSheet(s.name);
     nav.appendChild(btn);
   });
 }
 
-// Иконка вкладки (inline SVG)
-function makeNavIcon() {
+// Иконка вкладки: файл из папки img (путь — в SHEET_ICONS, config.js).
+// Картинка красится цветом темы через CSS-маску (background-color: currentColor).
+function makeNavIcon(sheetName) {
   const wrap = document.createElement('span');
   wrap.className = 'nav-icon';
-  wrap.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" ' +
-    'stroke="currentColor" stroke-width="2" stroke-linecap="round">' +
-    '<rect x="4" y="3" width="16" height="18" rx="2"/>' +
-    '<path d="M8 7h8M8 11h8M8 15h5"/></svg>';
+  wrap.setAttribute('role', 'img');
+  const src = SHEET_ICONS[sheetName];
+  if (src) {
+    wrap.style.setProperty('--icon', 'url("' + src + '")');
+  }
   return wrap;
 }
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, ch =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
+}
+
+// ============================================================
+//  ШАПКА: название государства и три показателя
+// ============================================================
+
+// Кэш «Полное название государства» с листа «Основная информация»
+// (шапка сохраняет его и при переключении на другие вкладки)
+let headerStateName = '';
+
+// Ищем поле «Полное название государства» по подписи среди секций макета
+function findFullStateNameCell() {
+  for (const section of LAYOUT.sections) {
+    for (const f of section.fields) {
+      if (/полное\s+название/i.test(cellAt(f.label[0], f.label[1]).display)) {
+        return f.value;
+      }
+    }
+  }
+  return null;
+}
+
+// В шапке — значение «Полное название государства» вместо названия таблицы.
+// Если текст не влезает в одну строку — включается перенос строк
+// и шрифт уменьшается на 2 пт (20px -> 17px).
+function updateHeaderTitle() {
+  const cell = findFullStateNameCell();
+  if (cell) {
+    const v = cellAt(cell[0], cell[1]).display;
+    if (v !== '') headerStateName = v;
+  }
+  const title = document.getElementById('table-title');
+  title.textContent = headerStateName || tableName;
+  title.classList.remove('skeleton');   // скелетон показывается только до загрузки
+  title.classList.remove('compact');
+  if (title.scrollWidth > title.clientWidth) {
+    title.classList.add('compact');
+  }
+}
+
+// Три показателя в шапке: казна, баланс, рекруты.
+// Значения передаёт main.js (пока — случайные заглушки).
+function updateHeaderStats(stats) {
+  setHeaderStat('stat-treasury', 'Казна на конец хода',
+    formatStatNumber(stats.treasury),
+    stats.treasury <= 0 ? 'neg' : 'neutral');
+  setHeaderStat('stat-balance', 'Баланс',
+    (stats.balance > 0 ? '+' : '') + formatStatNumber(stats.balance),
+    stats.balance > 0 ? 'pos' : (stats.balance < 0 ? 'neg' : 'neutral'));
+  setHeaderStat('stat-recruits', 'Рекруты в конце хода',
+    formatStatNumber(stats.recruits), 'neutral');
+}
+
+function setHeaderStat(id, label, value, valueClass) {
+  const el = document.getElementById(id);
+  el.textContent = '';
+  el.classList.remove('skeleton');   // полоса-заглушка — только до загрузки
+  el.append(label + ': ');
+  const b = document.createElement('b');
+  b.className = valueClass;
+  b.textContent = value;
+  el.appendChild(b);
+}
+
+// Разряды разделяем пробелом: 12345 -> «12 345»
+function formatStatNumber(n) {
+  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
 
 // Отображение активного листа.
@@ -113,6 +183,9 @@ function renderPage() {
   const charSec = makeSection(true);
   renderCharacters(charSec);
   content.appendChild(charSec);
+
+  // 5. Обновляем название государства в шапке
+  updateHeaderTitle();
 }
 
 // Поле «название -> значение»: <p> с названием, поле ввода / список / <p> для формулы
@@ -231,12 +304,20 @@ function renderEntity(container, entity) {
   }
   container.appendChild(table);
 
-  // Радиальная диаграмма долей населения — только для секции «Раса»
-  if (entity.chart) {
-    const chartBox = document.createElement('div');
-    chartBox.id = 'race-chart';
-    container.appendChild(chartBox);
-    renderRaceChart(chartBox, entity);
+  // Диаграммы под списком сущностей: идут слева направо в одном ряду,
+  // при нехватке места — переносятся на следующую строку
+  // (настройки — entity.charts в config.js)
+  if (entity.charts && entity.charts.length) {
+    const row = document.createElement('div');
+    row.className = 'entity-charts';
+    entity.charts.forEach(chart => {
+      const box = document.createElement('div');
+      box.id = chart.id;
+      box.className = 'entity-chart';
+      row.appendChild(box);
+      renderEntityChart(box, entity, chart);
+    });
+    container.appendChild(row);
   }
 }
 

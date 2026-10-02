@@ -20,7 +20,7 @@
   --err: #E5533D;         /* статус: ошибка / неверный ввод */
   --err-text: #FFEDEA;
 
-  --header-h: 52px;
+  --header-h: 60px;
   --sidebar-w: 230px;
 }
 
@@ -47,19 +47,63 @@ body {
   object-fit: contain; border-radius: 4px;
 }
 #table-icon[hidden] { display: none; }
+/* Название государства в шапке: по умолчанию — в одну строку */
 #site-header h1 {
-  margin: 0; font-size: 20px; font-weight: 600; flex: 1; color: var(--text);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin: 0; font-size: 20px; font-weight: 600; flex: 0 1 auto; min-width: 0;
+  max-width: 42%; color: var(--text);
+  white-space: nowrap; overflow: hidden;
 }
+/* Текст не влезает в одну строку — переносим на новые строки
+   и уменьшаем шрифт на 2 пт (20px -> 17px) */
+#site-header h1.compact {
+  font-size: 17px; white-space: normal; overflow-wrap: break-word; line-height: 1.15;
+}
+/* Разграничительная линия справа от названия (цвет секций) */
+#header-divider {
+  flex: 0 0 2px; align-self: stretch; margin: 5px 0;
+  background: var(--section-bg); border-radius: 1px;
+}
+/* Три показателя (казна, баланс, рекруты) у разделительной линии:
+   вертикальная колонка, при нехватке высоты переносятся правее */
+#header-stats {
+  flex: 1 1 0; min-width: 0; align-self: stretch;
+  display: flex; flex-direction: column; flex-wrap: wrap;
+  justify-content: center; align-content: flex-start;
+  gap: 0 24px; padding: 4px 0; overflow: hidden;
+}
+.header-stat {
+  font-size: 12px; line-height: 14px; white-space: nowrap;
+  color: rgba(255, 255, 255, .75);
+}
+.header-stat b { font-weight: 600; }
+.header-stat b.pos { color: var(--ok); }
+.header-stat b.neg { color: var(--err); }
+.header-stat b.neutral { color: var(--text); }
+/* Кнопки-иконки в шапке (Обновить, Карта, Выйти).
+   Текст кнопок сохранён в title и aria-label.
+   Иконка — SVG-файл из папки img, красится цветом кнопки
+   через CSS-маску (background-color: currentColor). */
 #toolbar { display: flex; gap: 8px; }
-#toolbar button {
-  padding: 8px 16px; font-size: 14px; cursor: pointer;
-  border: none; border-radius: 4px;
+.icon-btn {
+  width: 36px; height: 36px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; border: none; border-radius: 4px;
   background: var(--color-6); color: #fff;
 }
-#toolbar button:hover { background: #3A8FD0; }
-#logout-btn { background: transparent; border: 1px solid var(--err); color: var(--err); }
-#logout-btn:hover { background: rgba(229, 83, 61, .2); }
+.icon-btn:hover { background: #3A8FD0; }
+#logout-btn { background: #8C5938; border: 1px solid #8C5938; color: #fff; }
+#logout-btn:hover { background: #A06B45; border-color: #A06B45; }
+.btn-icon {
+  width: 18px; height: 18px; background-color: currentColor;
+  -webkit-mask-image: var(--icon);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  mask-image: var(--icon);
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+}
 
 /* Индикатор статуса обновления (левее кнопки «Обновить») */
 #update-status {
@@ -97,7 +141,21 @@ body {
   background: rgba(140, 89, 56, .4);
   border-left-color: var(--color-6); color: #fff;
 }
-.nav-icon { flex: 0 0 18px; width: 18px; height: 18px; color: var(--color-2); }
+/* Иконка вкладки — SVG-файл из папки img, красится цветом темы
+   через CSS-маску (background-color: currentColor) */
+.nav-icon {
+  flex: 0 0 18px; width: 18px; height: 18px;
+  color: var(--color-2);
+  background-color: currentColor;
+  -webkit-mask-image: var(--icon);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  mask-image: var(--icon);
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+}
 .nav-item.active .nav-icon { color: #5EB3F2; }
 .nav-label {
   white-space: pre-wrap;
@@ -111,7 +169,7 @@ body {
   margin-left: var(--sidebar-w);
   padding: calc(var(--header-h) + 20px) 28px 70px;
 }
-.page { max-width: 1150px; }
+.page { max-width: 1150px; transition: filter .3s ease; }
 
 /* Два столбца блоков данных */
 #content {
@@ -232,8 +290,15 @@ table.entity-table p.readonly-value {
   border-radius: 4px; cursor: not-allowed;
 }
 
-/* Радиальная диаграмма «Раса»: небольшой пончик + подписи с процентами */
-.race-chart { display: flex; align-items: center; gap: 18px; margin-top: 14px; flex-wrap: wrap; }
+/* Ряд диаграмм секции: слева направо, при нехватке места — новая строка */
+.entity-charts { display: flex; flex-wrap: wrap; gap: 16px 26px; align-items: flex-start; margin-top: 14px; }
+.entity-chart { overflow-x: auto; max-width: 100%; }
+.entity-chart svg { display: block; }
+/* Заголовок под диаграммой, по центру */
+.chart-title { margin: 10px 0 0; font-size: 13px; font-weight: 600; color: rgba(255, 255, 255, .8); text-align: center; }
+
+/* Радиальная диаграмма: небольшой пончик + подписи с процентами */
+.race-chart { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
 .race-chart svg { display: block; flex: 0 0 auto; }
 .race-chart-legend { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .race-legend-item {
@@ -242,11 +307,11 @@ table.entity-table p.readonly-value {
 }
 .race-legend-chip { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
 .race-legend-text { white-space: nowrap; }
-/* Наведение на долю: сектор ярче, подпись легенды — жирнее.
-   Текст не переносится (nowrap), маркер фиксированной ширины,
-   поэтому утолщение шрифта не сдвигает раскладку. */
+/* Наведение на долю: сектор ярче, подпись легенды — белее.
+   Шрифт не утолщается: жирный текст расширил бы строку легенды,
+   а с ней — всю диаграмму, и центрированный заголовок бы сдвинулся. */
 .race-chart path.seg.hovered { filter: brightness(1.35); }
-.race-legend-item.hovered .race-legend-text { font-weight: 700; }
+.race-legend-item.hovered .race-legend-text { color: #fff; }
 
 /* Popup с описанием ошибки ввода */
 .validation-popup {
@@ -275,3 +340,75 @@ table.entity-table p.readonly-value {
   border: 1px solid var(--color-1); border-radius: 2px;
   vertical-align: middle; margin: 0 4px 0 12px;
 }
+
+/* ============================================================
+   Загрузка: индикатор в центре контента, скелетоны в шапке
+   ============================================================ */
+/* Индикатор закреплён в видимой части экрана: от шапки вниз,
+   правее навигации. Благодаря position: fixed он всегда по центру
+   видимой области — независимо от высоты контента и прокрутки.
+   Появляется и исчезает плавно (opacity .35s). */
+#loading-overlay {
+  position: fixed; top: var(--header-h); left: var(--sidebar-w);
+  right: 0; bottom: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  justify-content: center;
+  background: rgba(4, 4, 4, .6);
+  opacity: 0; pointer-events: none; z-index: 100;
+  transition: opacity .35s ease;
+}
+/* Показывается и при загрузке вкладки, и при «Обновить» */
+#main.loading #loading-overlay,
+#main.refreshing #loading-overlay { opacity: 1; pointer-events: auto; }
+/* При загрузке вкладки контент скрыт, после ответа плавно проявляется */
+#content { transition: opacity .35s ease; }
+#main.loading #content { opacity: 0; }
+/* «Обновить»: индикатор поверх текущего контента, контент размыт */
+#main.refreshing .page { filter: blur(6px); pointer-events: none; }
+/* Крутящаяся иконка загрузки (img/loading-icon.svg, красится через маску) */
+.loading-spinner {
+  width: 44px; height: 44px;
+  background-color: #D9A441;
+  -webkit-mask-image: url('img/loading-icon.svg');
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  mask-image: url('img/loading-icon.svg');
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  animation: spin .9s linear infinite;
+}
+.loading-label { font-size: 16px; color: rgba(255, 255, 255, .8); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Скелетон: прямоугольник со скруглёнными краями,
+   слева направо непрерывно проходит «блеск» */
+.skeleton {
+  background: linear-gradient(100deg,
+    rgba(255, 255, 255, .07) 40%,
+    rgba(255, 255, 255, .24) 50%,
+    rgba(255, 255, 255, .07) 60%);
+  background-size: 200% 100%;
+  animation: skeleton-shine 1.4s linear infinite;
+}
+@keyframes skeleton-shine {
+  from { background-position: 100% 0; }
+  to   { background-position: 0% 0; }
+}
+/* Название государства: вместо текста — скелетон,
+   пока весь контент не загружен */
+#table-title.skeleton {
+  color: transparent;
+  min-width: 240px; min-height: 24px;
+  border-radius: 6px;
+}
+/* Показатели шапки: полосы-заглушки разной длины */
+.header-stat.skeleton {
+  display: inline-block; min-height: 13px;
+  border-radius: 4px; color: transparent; margin: 1px 0;
+}
+.header-stat.skeleton b { color: transparent; }
+#stat-treasury.skeleton { min-width: 210px; }
+#stat-balance.skeleton  { min-width: 150px; }
+#stat-recruits.skeleton  { min-width: 175px; }
