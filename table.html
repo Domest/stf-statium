@@ -3,25 +3,60 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Просмотр таблицы</title>
+  <title>Fauxlore: VM - Statium</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header id="site-header">
     <img id="table-icon" alt="" hidden>
     <h1 id="table-title"></h1>
+    <div id="header-divider"></div>
+    <!-- Показатели шапки: на десктопе живут здесь, у разделительной
+         линии; на мобильных main.js переносит их в #stats-area -->
+    <div id="header-stats">
+      <span class="header-stat" id="stat-treasury"></span>
+      <span class="header-stat" id="stat-balance"></span>
+      <span class="header-stat" id="stat-recruits"></span>
+    </div>
     <span id="update-status"></span>
     <div id="toolbar">
-      <button id="refresh-btn">Обновить</button>
-      <button id="logout-btn">Выйти</button>
+      <button id="refresh-btn" class="icon-btn" title="Обновить" aria-label="Обновить">
+        <span class="btn-icon" role="img" aria-label="Обновить" style="--icon: url('img/refresh-button-icon.svg');"></span>
+      </button>
+      <button id="map-btn" class="icon-btn" title="Карта" aria-label="Карта">
+        <span class="btn-icon" role="img" aria-label="Карта" style="--icon: url('img/map-button-icon.svg');"></span>
+      </button>
+      <button id="logout-btn" class="icon-btn" title="Выйти" aria-label="Выйти">
+        <span class="btn-icon" role="img" aria-label="Выйти" style="--icon: url('img/exit-button-icon.svg');"></span>
+      </button>
     </div>
   </header>
 
-  <nav id="sidebar">
-    <div id="sheets-nav">
-      <div class="nav-loading">Загрузка…</div>
-    </div>
-  </nav>
+  <!-- Кнопка «>» показателей — только для мобильных: выпадающая
+       секция ПОД шапкой (по иерархии ниже навигации — открытая
+       навигация её перекрывает). Сами показатели на мобильных
+       переносит сюда main.js (applyLayoutMode) -->
+  <div id="stats-area">
+    <button id="stats-toggle" aria-label="Показатели" title="Показатели">&gt;</button>
+  </div>
+
+  <!-- Область навигации: панель и кнопка «>» на её краю
+       (на мобильных панель скрывается вместе с областью,
+       кнопка едет вместе с ней) -->
+  <div id="sidebar-area">
+    <nav id="sidebar">
+      <div id="sheets-nav">
+        <div class="nav-loading">Загрузка…</div>
+      </div>
+      <!-- На мобильных сюда переносятся кнопки «Карта» и «Выйти» -->
+      <div id="nav-footer">
+        <div id="nav-actions"></div>
+      </div>
+    </nav>
+    <button id="nav-toggle" aria-label="Меню" title="Меню">&gt;</button>
+  </div>
+  <!-- Затемнение под открытой мобильной навигацией -->
+  <div id="sidebar-backdrop"></div>
 
   <main id="main">
     <div class="page">
@@ -30,11 +65,17 @@
         Значения сохраняются по Enter или потере фокуса (списки — сразу при выборе).
         <span class="sq" style="background:rgba(140,89,56,.22);"></span>Вычисляется формулой — редактирование запрещено.
       </div>
-      <div id="content">Загрузка...</div>
+      <div id="content"></div>
+    </div>
+    <!-- Индикатор загрузки: по центру области контента,
+         крутящаяся иконка img/loading-icon.svg + надпись «Загрузка» -->
+    <div id="loading-overlay" aria-hidden="true">
+      <span class="loading-spinner"></span>
+      <span class="loading-label">Загрузка</span>
     </div>
   </main>
 
-  <!-- Порядок подключения важен: config -> api -> validation -> tints -> charts -> render -> edit -> main -->
+  <!-- Порядок подключения важен: config -> api -> validation -> tints -> charts -> render -> edit -> persons -> main -->
   <script src="config.js"></script>
   <script src="api.js"></script>
   <script src="validation.js"></script>
@@ -42,6 +83,7 @@
   <script src="charts.js"></script>
   <script src="render.js"></script>
   <script src="edit.js"></script>
+  <script src="persons.js"></script>
   <script src="main.js"></script>
 </body>
 </html>

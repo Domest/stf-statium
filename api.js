@@ -7,6 +7,10 @@
 const token = localStorage.getItem('session_token');
 const tableName = localStorage.getItem('table_name');
 
+// Мобильный ли экран (ширина до 860px): от этого зависят скрываемая
+// навигация, перенос кнопок в неё и спойлеры диаграмм
+const mobileMedia = window.matchMedia('(max-width: 860px)');
+
 // ============================================================
 //  СОСТОЯНИЕ ДАННЫХ АКТИВНОГО ЛИСТА
 // ============================================================
@@ -76,9 +80,31 @@ function parseCellNumber(text) {
 // ============================================================
 const statusEl = document.getElementById('update-status');
 
+// Время последнего успешного обновления — показывается
+// на мобильных под иконкой done
+let lastSuccessTime = null;
+
+// Иконка результата через CSS-маску (красится цветом currentColor)
+function statusIcon(file) {
+  return '<span class="status-icon" style="--icon: url(\'img/' + file + '\');"></span>';
+}
+
 function setStatus(type, text) {
   statusEl.className = 'show ' + type;
-  statusEl.textContent = text;
+  if (mobileMedia.matches) {
+    // Мобильная версия: вместо текста — иконки.
+    // Загрузка — крутящаяся иконка; успех — done с временем
+    // под ним; ошибка — красный крест
+    if (type === 'loading') {
+      statusEl.innerHTML = statusIcon('loading-icon.svg');
+    } else {
+      statusEl.innerHTML =
+        statusIcon(type === 'success' ? 'done-icon.svg' : 'error-icon.svg') +
+        (lastSuccessTime ? '<span class="status-time">' + lastSuccessTime + '</span>' : '');
+    }
+  } else {
+    statusEl.textContent = text;
+  }
 }
 
 function beginRequest() {
@@ -91,6 +117,7 @@ function endRequest(ok, message) {
   if (pendingRequests > 0) return; // ещё есть незавершённые запросы
   const time = new Date().toLocaleTimeString();
   if (ok) {
+    lastSuccessTime = time;
     setStatus('success', (message || 'Данные обновлены') + ' · ' + time);
   } else {
     setStatus('error', 'Ошибка: ' + message);

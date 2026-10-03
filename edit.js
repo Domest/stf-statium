@@ -185,7 +185,9 @@ function applySnapshot(result) {
     if (el.dataset.tint) refreshTint(el);
   });
 
-  // Диаграмма «Раса» зависит от численности — перерисовываем её по свежим данным
-  const chartBox = document.getElementById('race-chart');
-  if (chartBox) renderRaceChart(chartBox, LAYOUT.entities[0]);
+  // Диаграммы сущностей зависят от значений — перерисовываем их по свежим данным
+  refreshEntityCharts();
+
+  // «Полное название государства» могло измениться — обновляем шапку
+  updateHeaderTitle();
 }

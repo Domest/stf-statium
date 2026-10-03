@@ -2,7 +2,8 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Test Tables</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fauxlore: Velum Mundi</title>
   <style>
     body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }
     ul { list-style: none; padding: 0; }
@@ -37,6 +38,24 @@
     #login-btn { background: #34a853; color: white; }
     #cancel-btn { background: #eee; }
     #modal-error { color: #d93025; margin-top: 10px; min-height: 20px; }
+
+    /* ============ МОБИЛЬНАЯ ВЕРСИЯ ============ */
+    @media (max-width: 600px) {
+      body { margin: 16px auto; padding: 0 12px; }
+      h1 { font-size: 22px; }
+      li { margin: 6px 0; }
+      li button { font-size: 14px; padding: 12px 14px; }
+      .modal-content {
+        width: calc(100vw - 28px); min-width: 0; max-width: none;
+        padding: 18px; max-height: calc(100vh - 40px);
+        overflow-y: auto;
+      }
+      .modal-content h2 { font-size: 18px; }
+      /* 16px у поля ввода — без автозума при фокусе на iOS */
+      .modal-content input { font-size: 16px; }
+      .modal-buttons button { font-size: 14px; padding: 12px; }
+      #modal-error { font-size: 13px; }
+    }
   </style>
 </head>
 <body>

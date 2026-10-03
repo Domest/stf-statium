@@ -20,7 +20,7 @@
   --err: #E5533D;         /* статус: ошибка / неверный ввод */
   --err-text: #FFEDEA;
 
-  --header-h: 52px;
+  --header-h: 60px;
   --sidebar-w: 230px;
 }
 
@@ -47,19 +47,96 @@ body {
   object-fit: contain; border-radius: 4px;
 }
 #table-icon[hidden] { display: none; }
+/* Название государства в шапке: по умолчанию — в одну строку */
 #site-header h1 {
-  margin: 0; font-size: 20px; font-weight: 600; flex: 1; color: var(--text);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin: 0; font-size: 20px; font-weight: 600; flex: 0 1 auto; min-width: 0;
+  max-width: 42%; color: var(--text);
+  white-space: nowrap; overflow: hidden;
 }
-#toolbar { display: flex; gap: 8px; }
-#toolbar button {
-  padding: 8px 16px; font-size: 14px; cursor: pointer;
-  border: none; border-radius: 4px;
+/* Текст не влезает в одну строку — переносим на новые строки
+   и уменьшаем шрифт на 2 пт (20px -> 17px) */
+#site-header h1.compact {
+  font-size: 17px; white-space: normal; overflow-wrap: break-word; line-height: 1.15;
+}
+/* Разграничительная линия справа от названия (цвет секций) */
+#header-divider {
+  flex: 0 0 2px; align-self: stretch; margin: 5px 0;
+  background: var(--section-bg); border-radius: 1px;
+}
+/* Три показателя (казна, баланс, рекруты) у разделительной линии:
+   вертикальная колонка, при нехватке высоты переносятся правее.
+   Десктопный вид; на мобильных показатели переезжают в выпадающую
+   секцию #stats-area (переносит main.js, стили — в мобильной части) */
+#header-stats {
+  flex: 1 1 0; min-width: 0; align-self: stretch;
+  display: flex; flex-direction: column; flex-wrap: wrap;
+  justify-content: center; align-content: flex-start;
+  gap: 0 24px; padding: 4px 0; overflow: hidden;
+}
+/* Выпадающая секция показателей ПОД шапкой — только мобильные.
+   Закреплена под шапкой; по иерархии ниже навигации —
+   открытая навигация её перекрывает.
+   Кнопка «>» — в общем потоке секции (колонка): при раскрытии
+   она уезжает вниз вместе с показателями и не перекрывает их */
+#stats-area {
+  position: fixed; top: var(--header-h); left: 0; right: 0;
+  z-index: 150;
+  display: flex; flex-direction: column; align-items: center;
+}
+/* Кнопка «>»: маленькая, круглая, по центру под шапкой.
+   Полупрозрачная; при открытии — непрозрачная и повёрнута вверх */
+#stats-toggle {
+  display: none;   /* показывается только на мобильных */
+  width: 24px; height: 24px; padding: 0; margin: 0;
+  align-items: center; justify-content: center;
+  transform: rotate(90deg);
+  border: 1px solid rgba(255, 255, 255, .25); border-radius: 50%;
+  background: var(--header-bg); color: rgba(255, 255, 255, .85);
+  font-size: 13px; line-height: 1; font-family: inherit;
+  cursor: pointer; opacity: .5;
+  transition: opacity .2s ease, transform .2s ease, margin-top .2s ease;
+}
+#stats-toggle:hover { opacity: .8; }
+/* Открытая кнопка «сидит» на нижней границе секции показателей */
+#stats-area.open #stats-toggle {
+  opacity: 1; transform: rotate(-90deg);
+  margin-top: -12px;
+}
+.header-stat {
+  font-size: 12px; line-height: 14px; white-space: nowrap;
+  color: rgba(255, 255, 255, .75);
+}
+.header-stat b { font-weight: 600; }
+.header-stat b.pos { color: var(--ok); }
+.header-stat b.neg { color: var(--err); }
+.header-stat b.neutral { color: var(--text); }
+/* Кнопки-иконки в шапке (Обновить, Карта, Выйти).
+   Текст кнопок сохранён в title и aria-label.
+   Иконка — SVG-файл из папки img, красится цветом кнопки
+   через CSS-маску (background-color: currentColor). */
+/* Кнопки прижаты к правому краю шапки
+   (показатели переехали в выпадающую секцию) */
+#toolbar { display: flex; gap: 8px; margin-left: auto; }
+.icon-btn {
+  width: 36px; height: 36px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; border: none; border-radius: 4px;
   background: var(--color-6); color: #fff;
 }
-#toolbar button:hover { background: #3A8FD0; }
-#logout-btn { background: transparent; border: 1px solid var(--err); color: var(--err); }
-#logout-btn:hover { background: rgba(229, 83, 61, .2); }
+.icon-btn:hover { background: #3A8FD0; }
+#logout-btn { background: #8C5938; border: 1px solid #8C5938; color: #fff; }
+#logout-btn:hover { background: #A06B45; border-color: #A06B45; }
+.btn-icon {
+  width: 18px; height: 18px; background-color: currentColor;
+  -webkit-mask-image: var(--icon);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  mask-image: var(--icon);
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+}
 
 /* Индикатор статуса обновления (левее кнопки «Обновить») */
 #update-status {
@@ -74,12 +151,18 @@ body {
 /* ============================================================
    Вертикальная навигация по листам
    ============================================================ */
-#sidebar {
+/* Область навигации: фиксирована под шапкой, содержит панель
+   и кнопку «>» на её правом краю — на мобильных при скрытии
+   панели кнопка уезжает вместе с ней */
+#sidebar-area {
   position: fixed; left: 0; top: var(--header-h); bottom: 0;
-  width: var(--sidebar-w);
+  width: var(--sidebar-w); z-index: 200;
+}
+#sidebar {
+  position: absolute; inset: 0;
   background: var(--sidebar-bg);
   border-right: 1px solid rgba(255, 255, 255, .08);
-  overflow-y: auto; z-index: 200;
+  overflow-y: auto;
 }
 #sheets-nav { padding-top: 8px; }
 .nav-loading, .nav-empty {
@@ -97,7 +180,21 @@ body {
   background: rgba(140, 89, 56, .4);
   border-left-color: var(--color-6); color: #fff;
 }
-.nav-icon { flex: 0 0 18px; width: 18px; height: 18px; color: var(--color-2); }
+/* Иконка вкладки — SVG-файл из папки img, красится цветом темы
+   через CSS-маску (background-color: currentColor) */
+.nav-icon {
+  flex: 0 0 18px; width: 18px; height: 18px;
+  color: var(--color-2);
+  background-color: currentColor;
+  -webkit-mask-image: var(--icon);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  mask-image: var(--icon);
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+}
 .nav-item.active .nav-icon { color: #5EB3F2; }
 .nav-label {
   white-space: pre-wrap;
@@ -111,7 +208,7 @@ body {
   margin-left: var(--sidebar-w);
   padding: calc(var(--header-h) + 20px) 28px 70px;
 }
-.page { max-width: 1150px; }
+.page { max-width: 1150px; transition: filter .3s ease; }
 
 /* Два столбца блоков данных */
 #content {
@@ -136,6 +233,15 @@ h2.section-title {
   border-bottom: 2px solid rgba(140, 89, 56, .6); padding-bottom: 5px;
 }
 h3.entity-name { margin: 10px 0 4px; font-size: 15px; color: rgba(255, 255, 255, .85); }
+
+/* Советники: два столбца, блоки идут слева направо,
+   не вместившиеся переходят на новую строку */
+.advisors-row {
+  display: grid; grid-template-columns: 1fr 1fr;
+  column-gap: 26px; row-gap: 16px; align-items: start;
+}
+@media (max-width: 860px) { .advisors-row { grid-template-columns: 1fr; } }
+.advisor-card { min-width: 0; }
 
 /* Поле «название -> значение»:
    подпись умеет сжиматься и переносить текст, поле ввода — забирать место.
@@ -180,27 +286,154 @@ input.cell-input.invalid, select.cell-input.invalid {
   border-color: var(--err); background: rgba(229, 83, 61, .12);
 }
 
-/* Таблица персонажей — единственный табличный блок */
-table.characters { border-collapse: collapse; width: 100%; margin-top: 8px; }
-table.characters th, table.characters td {
-  border: 1px solid rgba(140, 89, 56, .4);
-  padding: 3px; text-align: left; position: relative;
+/* ============================================================
+   Секция персон «Правящий дом»
+   ============================================================ */
+/* Заголовок секции + кнопка «Добавить» в правом углу */
+.chars-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.chars-head .section-title { flex: 1 1 auto; }
+/* Кнопки-иконки: Добавить / Изменить / Удалить */
+.char-btn {
+  width: 28px; height: 28px; padding: 0; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; border: 1px solid currentColor; border-radius: 4px;
+  background: transparent; color: rgba(255, 255, 255, .8);
+}
+.char-btn:hover { background: rgba(255, 255, 255, .12); color: #fff; }
+.char-btn .btn-icon { width: 17px; height: 17px; }
+.char-btn.danger { color: var(--err); }
+.char-btn.danger:hover { background: rgba(229, 83, 61, .2); color: var(--err); }
+/* «Изменить»: иконка и обводка в цвете #bf8b69 */
+.char-btn.edit { color: #bf8b69; }
+.char-btn.edit:hover { background: rgba(191, 139, 105, .22); color: #D3A181; }
+/* «Добавить» — в цвете #bf8b69 */
+.char-btn.add { color: #bf8b69; }
+/* Таблица персон: без границ, каждая строка — единым цветом
+   со скруглёнными краями; значения — обычный текст */
+table.characters {
+  border-collapse: separate; border-spacing: 0 6px; width: 100%;
 }
 table.characters th {
-  background: rgba(140, 89, 56, .45); color: var(--text);
-  font-size: 14px; padding: 8px 10px;
+  background: none; border: none; text-align: left;
+  font-size: 13px; font-weight: 600; color: rgba(255, 255, 255, .6);
+  padding: 4px 12px;
 }
-table.characters input.cell-input, table.characters select.cell-input {
-  width: 100%; border: 1px solid transparent; background: transparent;
-  padding: 5px 7px; font-size: 14px;
+/* Шапка закреплена при прокрутке списка */
+table.characters tr:first-child th {
+  position: sticky; top: 0; z-index: 1; background: var(--section-bg);
 }
-table.characters input.cell-input:hover, table.characters select.cell-input:hover {
-  border-color: var(--color-1);
+table.characters td {
+  border: none; background: rgba(140, 89, 56, .18);
+  padding: 9px 12px; font-size: 14px;
+  color: rgba(255, 255, 255, .85); text-align: left;
 }
-table.characters td.computed, table.characters th.computed {
-  background: rgba(140, 89, 56, .22); color: rgba(255, 255, 255, .85);
-  padding: 6px 10px; font-size: 14px; cursor: not-allowed;
+table.characters tr.char-row td:first-child { border-radius: 8px 0 0 8px; }
+table.characters tr.char-row td:last-child { border-radius: 0 8px 8px 0; }
+/* Имя персонажа — жирным */
+table.characters td.char-name { font-weight: 700; color: #fff; }
+/* Возраст — самый узкий столбец */
+table.characters td.char-age, table.characters th.char-age {
+  width: 1%; white-space: nowrap;
 }
+/* Столбец кнопок строки */
+table.characters td.char-actions, table.characters th.char-actions-head {
+  width: 1%; white-space: nowrap; text-align: right;
+}
+table.characters td.char-actions .char-btn { margin-left: 4px; }
+/* Строки персон кликабельны: подсветка при наведении и нажатии */
+table.characters tr.char-row { cursor: pointer; }
+table.characters tr.char-row td { transition: background .15s ease; }
+table.characters tr.char-row:hover td { background: rgba(140, 89, 56, .32); }
+table.characters tr.char-row:active td { background: rgba(140, 89, 56, .48); }
+/* Не более 10 персон по высоте — дальше прокрутка */
+.chars-scroll { overflow-y: auto; }
+.chars-scroll::-webkit-scrollbar { width: 10px; }
+.chars-scroll::-webkit-scrollbar-track { background: transparent; }
+.chars-scroll::-webkit-scrollbar-thumb {
+  background: rgba(140, 89, 56, .5); border-radius: 5px;
+}
+.chars-scroll::-webkit-scrollbar-thumb:hover { background: rgba(140, 89, 56, .7); }
+.chars-empty {
+  margin-top: 8px; font-size: 14px; color: rgba(255, 255, 255, .55);
+  text-align: center; padding: 14px 0;
+}
+
+/* ============================================================
+   Модальные окна (персона, подтверждение удаления)
+   ============================================================ */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 500;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, .5);
+  opacity: 0; transition: opacity .2s ease;
+}
+.modal-backdrop.open { opacity: 1; }
+.modal {
+  width: min(460px, calc(100vw - 40px));
+  max-height: calc(100vh - 60px); overflow-y: auto;
+  background: var(--section-bg);
+  border: 1px solid rgba(140, 89, 56, .55);
+  border-radius: 12px; padding: 16px 20px 20px;
+}
+/* Шапка окна: заголовок + крестик в правом верхнем углу */
+.modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; margin-bottom: 8px;
+}
+.modal-head h3 { margin: 0; font-size: 17px; }
+.modal-close {
+  background: none; border: none; border-radius: 4px;
+  color: rgba(255, 255, 255, .7); font-size: 18px; line-height: 1;
+  padding: 4px 8px; cursor: pointer; font-family: inherit;
+}
+.modal-close:hover { color: #fff; background: rgba(255, 255, 255, .1); }
+/* Поля в режиме просмотра: недоступны для правки */
+.person-field .cell-input:disabled {
+  opacity: .75; cursor: default;
+  border-color: rgba(255, 255, 255, .15);
+  background: rgba(255, 255, 255, .04);
+}
+/* Поля персоны */
+.person-field { margin: 10px 0; }
+.person-field label {
+  display: block; font-size: 13px;
+  color: rgba(255, 255, 255, .7); margin-bottom: 4px;
+}
+.person-field .cell-input { width: 100%; flex: none; }
+/* Примечание: многострочное поле, 70px по высоте, со скроллбаром */
+textarea.cell-input {
+  display: block; width: 100%;
+  padding: 7px 10px; font-size: 15px; font-family: inherit;
+  line-height: 1.4; resize: vertical;
+  border: 1px solid var(--color-1); border-radius: 4px;
+  background: var(--bg); color: var(--text);
+  overflow-y: auto;   /* скроллбар появляется сам при переполнении */
+}
+.person-field textarea.cell-input { height: 70px; min-height: 70px; }
+.person-err { display: none; font-size: 12px; color: var(--err); margin-top: 4px; }
+.person-field.invalid .cell-input { border-color: var(--err); }
+.person-field.invalid .person-err { display: block; }
+/* Низ окна: кнопка «Завершить» */
+.modal-foot { margin-top: 18px; display: flex; justify-content: center; }
+.modal-submit {
+  padding: 9px 30px; border: none; border-radius: 6px;
+  background: var(--color-6); color: #fff;
+  font-size: 15px; font-family: inherit; cursor: pointer;
+}
+.modal-submit:hover { background: #3A8FD0; }
+.modal-submit:disabled { opacity: .6; cursor: default; }
+/* Подтверждение удаления */
+.confirm-text { margin: 4px 0 16px; font-size: 15px; color: rgba(255, 255, 255, .9); }
+.confirm-actions { display: flex; justify-content: center; gap: 12px; }
+.confirm-btn {
+  padding: 8px 22px; border: none; border-radius: 6px;
+  font-size: 14px; font-family: inherit; cursor: pointer;
+  background: rgba(255, 255, 255, .12); color: #fff;
+}
+.confirm-btn:hover { background: rgba(255, 255, 255, .22); }
+.confirm-btn:disabled { opacity: .6; cursor: default; }
+.confirm-btn.danger { background: var(--err); color: var(--err-text); }
+.confirm-btn.danger:hover { background: #F06B54; }
 
 /* Списки сущностей (Раса, Религия, Сословия):
    вид таблицы БЕЗ границ ячеек. Секции занимают оба столбца. */
@@ -232,8 +465,15 @@ table.entity-table p.readonly-value {
   border-radius: 4px; cursor: not-allowed;
 }
 
-/* Радиальная диаграмма «Раса»: небольшой пончик + подписи с процентами */
-.race-chart { display: flex; align-items: center; gap: 18px; margin-top: 14px; flex-wrap: wrap; }
+/* Ряд диаграмм секции: слева направо, при нехватке места — новая строка */
+.entity-charts { display: flex; flex-wrap: wrap; gap: 16px 26px; align-items: flex-start; margin-top: 14px; }
+.entity-chart { overflow-x: auto; max-width: 100%; }
+.entity-chart svg { display: block; }
+/* Заголовок под диаграммой, по центру */
+.chart-title { margin: 10px 0 0; font-size: 13px; font-weight: 600; color: rgba(255, 255, 255, .8); text-align: center; }
+
+/* Радиальная диаграмма: небольшой пончик + подписи с процентами */
+.race-chart { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
 .race-chart svg { display: block; flex: 0 0 auto; }
 .race-chart-legend { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .race-legend-item {
@@ -241,6 +481,12 @@ table.entity-table p.readonly-value {
   font-size: 12px; color: rgba(255, 255, 255, .85);
 }
 .race-legend-chip { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
+.race-legend-text { white-space: nowrap; }
+/* Наведение на долю: сектор ярче, подпись легенды — белее.
+   Шрифт не утолщается: жирный текст расширил бы строку легенды,
+   а с ней — всю диаграмму, и центрированный заголовок бы сдвинулся. */
+.race-chart path.seg.hovered { filter: brightness(1.35); }
+.race-legend-item.hovered .race-legend-text { color: #fff; }
 
 /* Popup с описанием ошибки ввода */
 .validation-popup {
@@ -268,4 +514,247 @@ table.entity-table p.readonly-value {
   display: inline-block; width: 12px; height: 12px;
   border: 1px solid var(--color-1); border-radius: 2px;
   vertical-align: middle; margin: 0 4px 0 12px;
+}
+
+/* ============================================================
+   Загрузка: индикатор в центре контента, скелетоны в шапке
+   ============================================================ */
+/* Индикатор закреплён в видимой части экрана: от шапки вниз,
+   правее навигации. Благодаря position: fixed он всегда по центру
+   видимой области — независимо от высоты контента и прокрутки.
+   Появляется и исчезает плавно (opacity .35s). */
+#loading-overlay {
+  position: fixed; top: var(--header-h); left: var(--sidebar-w);
+  right: 0; bottom: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  justify-content: center;
+  background: rgba(4, 4, 4, .6);
+  opacity: 0; pointer-events: none; z-index: 100;
+  transition: opacity .35s ease;
+}
+/* Показывается и при загрузке вкладки, и при «Обновить» */
+#main.loading #loading-overlay,
+#main.refreshing #loading-overlay { opacity: 1; pointer-events: auto; }
+/* При загрузке вкладки контент скрыт, после ответа плавно проявляется */
+#content { transition: opacity .35s ease; }
+#main.loading #content { opacity: 0; }
+/* «Обновить» и открытые окна персон: контент размыт и недоступен */
+#main.refreshing .page, #main.blur .page { filter: blur(6px); pointer-events: none; }
+/* Крутящаяся иконка загрузки (img/loading-icon.svg, красится через маску) */
+.loading-spinner {
+  width: 44px; height: 44px;
+  background-color: #D9A441;
+  -webkit-mask-image: url('img/loading-icon.svg');
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  mask-image: url('img/loading-icon.svg');
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  animation: spin .9s linear infinite;
+}
+.loading-label { font-size: 16px; color: rgba(255, 255, 255, .8); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Скелетон: прямоугольник со скруглёнными краями,
+   слева направо непрерывно проходит «блеск» */
+.skeleton {
+  background: linear-gradient(100deg,
+    rgba(255, 255, 255, .07) 40%,
+    rgba(255, 255, 255, .24) 50%,
+    rgba(255, 255, 255, .07) 60%);
+  background-size: 200% 100%;
+  animation: skeleton-shine 1.4s linear infinite;
+}
+@keyframes skeleton-shine {
+  from { background-position: 100% 0; }
+  to   { background-position: 0% 0; }
+}
+/* Название государства: вместо текста — скелетон,
+   пока весь контент не загружен */
+#table-title.skeleton {
+  color: transparent;
+  min-width: 240px; min-height: 24px;
+  border-radius: 6px;
+}
+/* Показатели шапки: полосы-заглушки разной длины */
+.header-stat.skeleton {
+  display: inline-block; min-height: 13px;
+  border-radius: 4px; color: transparent; margin: 1px 0;
+}
+.header-stat.skeleton b { color: transparent; }
+#stat-treasury.skeleton { min-width: 210px; }
+#stat-balance.skeleton  { min-width: 150px; }
+#stat-recruits.skeleton  { min-width: 175px; }
+
+/* ============================================================
+   МОБИЛЬНАЯ ВЕРСИЯ
+   ============================================================ */
+/* Кнопка «>» показа/скрытия навигации — видна только на мобильных */
+/* Кнопка «>» показа/скрытия навигации — прикреплена к правому краю
+   панели и двигается вместе с ней. Видна только на мобильных;
+   когда навигация скрыта — полупрозрачная, при открытии — непрозрачная */
+#nav-toggle {
+  display: none; width: 34px; height: 34px; padding: 0;
+  position: absolute; left: calc(100% + 6px); top: 10px;
+  align-items: center; justify-content: center;
+  border: 1px solid rgba(255, 255, 255, .15); border-radius: 4px;
+  background: var(--sidebar-bg); color: var(--text);
+  font-size: 18px; font-family: inherit; cursor: pointer;
+  opacity: .5;
+  transition: opacity .2s ease, transform .2s ease, top .25s ease;
+}
+#nav-toggle:hover { background: rgba(255, 255, 255, .12); opacity: .8; }
+/* При открытой секции показателей main.js смещает кнопку вниз
+   (inline-стиль top), чтобы она не перекрывала секцию */
+#nav-toggle.open { opacity: 1; transform: rotate(180deg); }
+/* Затемнение под открытой мобильной навигацией */
+#sidebar-backdrop {
+  display: none; position: fixed; inset: 0; top: var(--header-h);
+  background: rgba(0, 0, 0, .5); z-index: 250;
+}
+/* Блок кнопок в навигации — виден только на мобильных */
+#nav-footer { display: none; }
+/* Спойлер диаграмм (на мобильных, по умолчанию открыт) */
+.charts-spoiler summary {
+  cursor: pointer; user-select: none;
+  margin-top: 14px; padding: 8px 0 2px;
+  font-size: 14px; color: rgba(255, 255, 255, .75);
+}
+.charts-spoiler summary:hover { color: #fff; }
+
+@media (max-width: 860px) {
+  /* Шрифт всех текстов — на 2pt меньше */
+  body { font-size: 13px; }
+  h2.section-title { font-size: 15px; }
+  h3.entity-name { font-size: 13px; }
+  .field > p.label { font-size: 13px; }
+  .field > p.computed { font-size: 12px; }
+  input.cell-input, select.cell-input { font-size: 13px; }
+  table.entity-table th { font-size: 12px; }
+  table.entity-table input.cell-input, table.entity-table select.cell-input { font-size: 12px; }
+  table.entity-table p.computed, table.entity-table p.readonly-value { font-size: 12px; }
+  table.characters th { font-size: 11px; }
+  table.characters td { font-size: 12px; }
+  .chart-title { font-size: 11px; }
+  .race-legend-item { font-size: 10px; }
+  .race-legend-chip { width: 8px; height: 8px; }
+  .nav-item { font-size: 13px; }
+  .nav-loading, .nav-empty { font-size: 12px; }
+  .sheet-placeholder { font-size: 13px; }
+  .loading-label { font-size: 14px; }
+  .modal-head h3 { font-size: 15px; }
+  .person-field label { font-size: 11px; }
+  .person-field .cell-input { font-size: 13px; }
+  textarea.cell-input { font-size: 13px; }
+  .person-err { font-size: 11px; }
+  .modal-submit { font-size: 13px; padding: 8px 24px; }
+  .confirm-text { font-size: 13px; }
+  .confirm-btn { font-size: 12px; }
+  .validation-popup { font-size: 11px; }
+  .chars-empty { font-size: 12px; }
+  #status { font-size: 11px; }
+  /* Статус обновления: вместо подробного текста — иконки.
+     Загрузка — крутящаяся иконка; успех — done с зелёной
+     обводкой и тусклым зелёным фоном, под ней — время;
+     ошибка — красный крест */
+  #update-status {
+    flex-direction: column; align-items: center; gap: 2px;
+    padding: 0; font-size: 10px; line-height: 1.2;
+  }
+  #update-status.show { display: flex; }
+  #update-status.loading {
+    padding: 0; background: none; color: #D9A441;
+  }
+  #update-status.loading .status-icon {
+    animation: spin .9s linear infinite;
+  }
+  #update-status.success {
+    color: var(--ok);
+    background: rgba(76, 175, 80, .18);
+    border: 1px solid var(--ok); border-radius: 6px;
+    padding: 2px 5px;
+  }
+  #update-status.error { color: var(--err); background: none; }
+  /* Иконка результата (img/done-icon.svg или img/error-icon.svg,
+     красится цветом currentColor через маску) */
+  #update-status .status-icon {
+    width: 20px; height: 20px;
+    background-color: currentColor;
+    -webkit-mask-image: var(--icon);
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    -webkit-mask-size: contain;
+    mask-image: var(--icon);
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+  }
+  #update-status .status-time { color: rgba(255, 255, 255, .7); }
+
+  /* Шапка: название государства на 2pt меньше, показатели мельче */
+  #site-header { padding: 0 10px; gap: 8px; }
+  #site-header h1 { font-size: 16px; max-width: 30%; }
+  #site-header h1.compact { font-size: 13px; }
+  #table-icon { height: 30px; max-width: 80px; }
+  .header-stat { font-size: 10px; line-height: 12px; }
+  /* Заглушка названия государства — короче, чтобы не растягивала
+     шапку и не выталкивала кнопки за край экрана */
+  #table-title.skeleton { min-width: 90px; min-height: 18px; }
+
+  /* Показатели шапки: на мобильных — в выпадающей секции ПОД шапкой */
+  #stats-toggle { display: inline-flex; }
+  /* Содержимое секции идёт слева направо; при нехватке места
+     элементы переходят на новую строку. Блок на всю ширину секции */
+  #stats-area #header-stats {
+    flex: none; min-width: 0; align-self: stretch;
+    display: none; flex-direction: row; flex-wrap: wrap;
+    justify-content: flex-start; align-items: center;
+    gap: 2px 24px; padding: 10px 16px 12px; overflow: visible;
+    background: var(--header-bg);
+    border-bottom: 1px solid rgba(255, 255, 255, .12);
+  }
+  #stats-area.open #header-stats { display: flex; }
+
+  /* Индикатор загрузки — по центру экрана: навигация скрыта,
+     поэтому и отступ слева ей не нужен */
+  #loading-overlay { left: 0; }
+
+  /* Блок legend сверху — вертикально и мельче */
+  .legend {
+    display: flex; flex-direction: column; align-items: flex-start;
+    gap: 4px; font-size: 10px;
+  }
+
+  /* Подписи полей короче — блоки значений длиннее */
+  .field > p.label { flex: 0 1 170px; }
+
+  /* Контент без отступа под навигацию */
+  #main { margin-left: 0; padding: calc(var(--header-h) + 12px) 12px 40px; }
+
+  /* Кнопка «>» и скрываемая область навигации (вместе с кнопкой) */
+  #nav-toggle { display: inline-flex; }
+  #sidebar-area {
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+    z-index: 260;
+  }
+  #sidebar-area.open { transform: none; }
+  #sidebar-backdrop.show { display: block; }
+
+  /* Кнопки «Карта» и «Выйти» — в навигации, под вкладками,
+     за разделительной линией */
+  #nav-footer {
+    display: block;
+    border-top: 1px solid rgba(255, 255, 255, .08);
+    margin-top: 12px; padding: 10px 14px 14px;
+  }
+  #nav-actions { display: flex; gap: 8px; }
+  #nav-actions .icon-btn { flex: 1 1 auto; width: auto; }
+
+  /* Секции — в один столбец; секции с таблицами
+     прокручиваются по горизонтали */
+  #content { grid-template-columns: 1fr; }
+  .block-wide { overflow-x: auto; }
 }
