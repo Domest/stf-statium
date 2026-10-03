@@ -70,6 +70,7 @@ function switchSheet(name) {
   currentSheet = name;
   localStorage.setItem('sheet_name', name);
   renderNav();
+  setSidebarOpen(false);   // на мобильных закрываем навигацию
   // Контент скрывается, по центру — индикатор «Загрузка»
   document.getElementById('main').classList.add('loading');
   loadData(false);
@@ -155,6 +156,91 @@ setHeaderSkeleton(true);
 document.getElementById('main').classList.add('loading');
 
 document.getElementById('refresh-btn').onclick = () => loadData(true);
+
+// ============================================================
+//  МОБИЛЬНАЯ РАСКЛАДКА: скрываемая навигация, перенос кнопок
+// ============================================================
+const navToggle = document.getElementById('nav-toggle');
+// Класс «open» вешаем на ОБЛАСТЬ навигации: вместе с панелью
+// уезжает и кнопка «>», прикреплённая к её правому краю
+const sidebarEl = document.getElementById('sidebar-area');
+const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+
+// Открытие/закрытие навигации кнопкой «>» под шапкой, у панели
+function setSidebarOpen(open) {
+  sidebarEl.classList.toggle('open', open);
+  sidebarBackdrop.classList.toggle('show', open);
+  navToggle.classList.toggle('open', open);
+}
+
+navToggle.addEventListener('click', () =>
+  setSidebarOpen(!sidebarEl.classList.contains('open')));
+sidebarBackdrop.addEventListener('click', () => setSidebarOpen(false));
+
+// ============================================================
+//  ПОКАЗАТЕЛИ ШАПКИ (казна, баланс, рекруты)
+// ============================================================
+// На десктопе — в шапке, у разделительной линии (как раньше).
+// На мобильных — в выпадающей секции под шапкой, которая
+// открывается/закрывается круглой кнопкой «>» по центру.
+const statsArea = document.getElementById('stats-area');
+const headerStats = document.getElementById('header-stats');
+const statsToggle = document.getElementById('stats-toggle');
+
+statsToggle.addEventListener('click', () => {
+  statsArea.classList.toggle('open');
+  updateNavToggleOffset();
+});
+
+// Кнопка «>» навигации смещается вниз на высоту открытой секции
+// показателей, чтобы не перекрывать её
+function updateNavToggleOffset() {
+  if (!mobileMedia.matches || !statsArea.classList.contains('open')) {
+    navToggle.style.top = '';
+    return;
+  }
+  const baseTop = parseFloat(getComputedStyle(navToggle).top) || 10;
+  navToggle.style.top = (baseTop + headerStats.offsetHeight) + 'px';
+}
+// Перенос строк в секции может изменить её высоту (поворот экрана,
+// изменение ширины) — пересчитываем смещение
+window.addEventListener('resize', updateNavToggleOffset);
+
+// ============================================================
+//  ПЕРЕНОС ЭЛЕМЕНТОВ МЕЖДУ РЕЖИМАМИ (мобильный <-> десктоп)
+// ============================================================
+// На мобильных кнопки «Карта» и «Выйти» переносятся в блок
+// навигации — под вкладками, за разделительной линией,
+// а показатели шапки — в выпадающую секцию под шапкой.
+// При возврате к десктопной ширине — всё обратно.
+function applyLayoutMode() {
+  if (mobileMedia.matches) {
+    // показатели — в секцию, ПЕРЕД кнопкой «>»:
+    // кнопка в потоке секции уедет вниз, под показатели
+    statsArea.insertBefore(headerStats, statsToggle);
+  } else {
+    statsArea.classList.remove('open');          // секция закрыта
+    updateNavToggleOffset();
+    document.getElementById('site-header')      // показатели — в шапку,
+      .insertBefore(headerStats,                // сразу после линии
+        document.getElementById('update-status'));
+  }
+  const target = mobileMedia.matches
+    ? document.getElementById('nav-actions')
+    : document.getElementById('toolbar');
+  target.appendChild(document.getElementById('map-btn'));
+  target.appendChild(document.getElementById('logout-btn'));
+}
+
+// Смена режима (мобильный <-> десктоп): переносим кнопки,
+// закрываем навигацию и перерисовываем лист
+// (спойлеры диаграмм строятся по-разному)
+mobileMedia.addEventListener('change', () => {
+  applyLayoutMode();
+  setSidebarOpen(false);
+  renderCurrentSheet();
+});
+applyLayoutMode();
 
 document.getElementById('logout-btn').onclick = () => {
   clearSession();

@@ -167,8 +167,8 @@ function renderPage() {
     content.appendChild(sec);
   });
 
-  // 2. Советники
-  const advSec = makeSection();
+  // 2. Советники — секция на всю ширину: внутри два столбца
+  const advSec = makeSection(true);
   renderAdvisors(advSec);
   content.appendChild(advSec);
 
@@ -219,21 +219,30 @@ function renderAdvisors(container) {
   const adv = LAYOUT.advisors;
   addSectionTitle(container, adv.title);
 
+  // Сетка советников: блоки выводятся слева направо, по два в строке;
+  // не вместившиеся переходят на новую строку
+  const cards = document.createElement('div');
+  cards.className = 'advisors-row';
+
   // Строки советников: идём вниз от строки заголовка, пока заполнено имя
   let row = adv.title[0] + 1;
   while (cellAt(row, adv.nameCol).display !== '') {
     const name = cellAt(row, adv.nameCol).display;
+    const card = document.createElement('div');
+    card.className = 'advisor-card';
     const h3 = document.createElement('h3');
     h3.className = 'entity-name';
     h3.textContent = name;
-    container.appendChild(h3);
+    card.appendChild(h3);
 
     adv.params.forEach(param => {
       const header = cellAt(param.header[0], param.header[1]).display;
-      renderField(container, header, row, param.col);
+      renderField(card, header, row, param.col);
     });
+    cards.appendChild(card);
     row++;
   }
+  container.appendChild(cards);
 }
 
 // Список сущностей (Раса / Религия / Сословия):
@@ -317,56 +326,22 @@ function renderEntity(container, entity) {
       row.appendChild(box);
       renderEntityChart(box, entity, chart);
     });
-    container.appendChild(row);
+    // На мобильных диаграммы — в спойлере (по умолчанию открыт);
+    // на десктопе — как обычно
+    if (mobileMedia.matches) {
+      const spoiler = document.createElement('details');
+      spoiler.className = 'charts-spoiler';
+      spoiler.open = true;
+      const summary = document.createElement('summary');
+      summary.textContent = 'Диаграммы';
+      spoiler.appendChild(summary);
+      spoiler.appendChild(row);
+      container.appendChild(spoiler);
+    } else {
+      container.appendChild(row);
+    }
   }
 }
 
-// Персонажи «Правящий дом (династия)» — табличный вид
-function renderCharacters(container) {
-  const ch = LAYOUT.characters;
-  addSectionTitle(container, ch.title);
-
-  const table = document.createElement('table');
-  table.className = 'characters';
-
-  // Заголовки столбцов берём из строки-заголовка листа (непустые ячейки)
-  const thead = document.createElement('tr');
-  const headerCells = [];
-  for (let c = 1; c <= 14; c++) {
-    const t = cellAt(ch.headerRow, c).display;
-    if (t !== '') headerCells.push({ col: c, text: t });
-  }
-  headerCells.forEach(hc => {
-    const th = document.createElement('th');
-    th.textContent = hc.text;
-    thead.appendChild(th);
-  });
-  table.appendChild(thead);
-
-  // Данные: все строки ниже строки-заголовка до конца листа
-  const lastRow = currentData.length;
-  for (let row = ch.headerRow + 1; row <= lastRow; row++) {
-    const rowHasContent = headerCells.some(hc => cellAt(row, hc.col).display !== '');
-    if (!rowHasContent) continue;
-
-    const tr = document.createElement('tr');
-    headerCells.forEach(hc => {
-      const cell = cellAt(row, hc.col);
-      const td = document.createElement('td');
-      if (cell.computed) {
-        td.className = 'computed';
-        td.dataset.row = row;
-        td.dataset.col = hc.col;
-        td.title = 'Вычисляется формулой — редактирование запрещено';
-        td.textContent = cell.display;
-      } else if (cell.options && cell.options.length) {
-        td.appendChild(makeSelect(row, hc.col, cell.display, cell.options));
-      } else {
-        td.appendChild(makeInput(row, hc.col, cell.display));
-      }
-      tr.appendChild(td);
-    });
-    table.appendChild(tr);
-  }
-  container.appendChild(table);
-}
+// Секция «Правящий дом» — в persons.js (таблица персон, окна
+// добавления / изменения / удаления, сохранение списка персон)

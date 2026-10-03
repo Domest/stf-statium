@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Просмотр таблицы</title>
+  <title>Fauxlore: VM - Statium</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,6 +11,8 @@
     <img id="table-icon" alt="" hidden>
     <h1 id="table-title"></h1>
     <div id="header-divider"></div>
+    <!-- Показатели шапки: на десктопе живут здесь, у разделительной
+         линии; на мобильных main.js переносит их в #stats-area -->
     <div id="header-stats">
       <span class="header-stat" id="stat-treasury"></span>
       <span class="header-stat" id="stat-balance"></span>
@@ -30,11 +32,31 @@
     </div>
   </header>
 
-  <nav id="sidebar">
-    <div id="sheets-nav">
-      <div class="nav-loading">Загрузка…</div>
-    </div>
-  </nav>
+  <!-- Кнопка «>» показателей — только для мобильных: выпадающая
+       секция ПОД шапкой (по иерархии ниже навигации — открытая
+       навигация её перекрывает). Сами показатели на мобильных
+       переносит сюда main.js (applyLayoutMode) -->
+  <div id="stats-area">
+    <button id="stats-toggle" aria-label="Показатели" title="Показатели">&gt;</button>
+  </div>
+
+  <!-- Область навигации: панель и кнопка «>» на её краю
+       (на мобильных панель скрывается вместе с областью,
+       кнопка едет вместе с ней) -->
+  <div id="sidebar-area">
+    <nav id="sidebar">
+      <div id="sheets-nav">
+        <div class="nav-loading">Загрузка…</div>
+      </div>
+      <!-- На мобильных сюда переносятся кнопки «Карта» и «Выйти» -->
+      <div id="nav-footer">
+        <div id="nav-actions"></div>
+      </div>
+    </nav>
+    <button id="nav-toggle" aria-label="Меню" title="Меню">&gt;</button>
+  </div>
+  <!-- Затемнение под открытой мобильной навигацией -->
+  <div id="sidebar-backdrop"></div>
 
   <main id="main">
     <div class="page">
@@ -53,7 +75,7 @@
     </div>
   </main>
 
-  <!-- Порядок подключения важен: config -> api -> validation -> tints -> charts -> render -> edit -> main -->
+  <!-- Порядок подключения важен: config -> api -> validation -> tints -> charts -> render -> edit -> persons -> main -->
   <script src="config.js"></script>
   <script src="api.js"></script>
   <script src="validation.js"></script>
@@ -61,6 +83,7 @@
   <script src="charts.js"></script>
   <script src="render.js"></script>
   <script src="edit.js"></script>
+  <script src="persons.js"></script>
   <script src="main.js"></script>
 </body>
 </html>
